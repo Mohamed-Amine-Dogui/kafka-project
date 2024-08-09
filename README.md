@@ -212,6 +212,7 @@ kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic second_topic
 ```
 
 **Understanding Ordering:** Remember, Kafka ensures message ordering within each partition, not across the entire topic. This means that while you do get ordering within a single partition, full ordering across multiple partitions is not guaranteed or expected.
+
 ---
 
 ## Kafka Consumer in Group
