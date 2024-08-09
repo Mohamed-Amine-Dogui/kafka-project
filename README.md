@@ -212,4 +212,67 @@ kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic second_topic
 ```
 
 **Understanding Ordering:** Remember, Kafka ensures message ordering within each partition, not across the entire topic. This means that while you do get ordering within a single partition, full ordering across multiple partitions is not guaranteed or expected.
+---
+
+## Kafka Consumer in Group
+
+This section will demonstrate how Kafka consumers operate within consumer groups and how messages are distributed across multiple consumers.
+
+### 1. Create a Topic with 3 Partitions
+
+First, we create a topic named `third_topic` with 3 partitions to distribute the load across multiple consumers:
+
+```bash
+kafka-topics.sh --bootstrap-server localhost:9092 --topic third_topic --create --partitions 3
+```
+
+### 2. Start a Consumer in a Group
+
+Next, start a consumer that will be part of a consumer group. Here, we specify the group ID as `my-first-application`:
+
+```bash
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic third_topic --group my-first-application
+```
+
+**Explanation:** At this point, the consumer joins the `my-first-application` group. However, since no messages have been produced yet, the consumer will be idle until messages are available in the topic.
+
+### 3. Start a Producer and Begin Producing Messages
+
+Now, start a producer to send messages to the `third_topic`. We'll use the `RoundRobinPartitioner` to evenly distribute messages across the 3 partitions:
+
+```bash
+kafka-console-producer.sh --bootstrap-server localhost:9092 --producer-property partitioner.class=org.apache.kafka.clients.producer.RoundRobinPartitioner --topic third_topic
+```
+
+**Explanation:** The `RoundRobinPartitioner` is used here for learning purposes to observe how messages are distributed across partitions. In a real production environment, Kafka's default partitioning logic, which optimizes based on the data sent, is typically more efficient.
+
+### 4. Start Another Consumer in the Same Group
+
+Now, start a second consumer as part of the same `my-first-application` group:
+
+```bash
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic third_topic --group my-first-application
+```
+
+**Explanation:** With two consumers in the same group, Kafka automatically distributes the partitions between them. If you send messages now, you'll notice that the messages are spread across the two consumers. Each consumer will handle different partitions, ensuring that the load is balanced.
+
+### 5. Start Another Consumer in a Different Group, Reading from the Beginning
+
+Finally, start a third consumer, but this time as part of a different group (`my-second-application`) and configure it to read from the beginning of the topic:
+
+```bash
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic third_topic --group my-second-application --from-beginning
+```
+
+**Explanation:** Since this consumer belongs to a different group (`my-second-application`), it will start reading from the beginning of the topic (`--from-beginning`). This group will have its own offset, independent of the `my-first-application` group. This allows you to see how messages can be processed differently depending on the group.
+
+### 6. Observing Consumer Behavior
+
+- **Multiple Consumers in the Same Group:** When multiple consumers are part of the same group, Kafka divides the partitions among them. If there are more consumers than partitions, some consumers may not receive any data because they have no partitions assigned.
+
+- **Rebalancing:** If a consumer in a group is stopped or starts, Kafka automatically rebalances the partitions among the remaining consumers. For example, if one consumer is stopped, the remaining consumers will take over its partition(s).
+
+- **Lag Handling:** If a consumer in a group is stopped and then restarted, it will resume from the last committed offset in the group. If new messages were produced while the consumer was offline, it will "catch up" on those messages.
+
+**Final Notes:** Understanding how Kafka distributes messages across consumer groups is key to designing scalable and fault-tolerant applications. The behavior demonstrated here shows Kafka's ability to handle load distribution, rebalancing, and lag management within consumer groups.
 
