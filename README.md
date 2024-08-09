@@ -275,5 +275,3 @@ kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic third_topic 
 
 - **Lag Handling:** If a consumer in a group is stopped and then restarted, it will resume from the last committed offset in the group. If new messages were produced while the consumer was offline, it will "catch up" on those messages.
 
-**Final Notes:** Understanding how Kafka distributes messages across consumer groups is key to designing scalable and fault-tolerant applications. The behavior demonstrated here shows Kafka's ability to handle load distribution, rebalancing, and lag management within consumer groups.
-
